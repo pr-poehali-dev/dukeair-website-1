@@ -26,6 +26,32 @@ const Payment = () => {
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+  const [promoError, setPromoError] = useState('');
+  const [discount, setDiscount] = useState(0);
+
+  const validPromoCodes: Record<string, { discount: number; name: string }> = {
+    WELCOME15: { discount: 0.15, name: 'Скидка 15% на первый полёт' },
+    FIRST15: { discount: 0.15, name: 'Скидка 15% для новых клиентов' },
+    LUGGAGE2: { discount: 0, name: 'Две сумки бесплатно' },
+  };
+
+  const applyPromoCode = () => {
+    const code = promoCode.toUpperCase().trim();
+    if (validPromoCodes[code]) {
+      const discountAmount = Math.round(total * validPromoCodes[code].discount);
+      setDiscount(discountAmount);
+      setPromoApplied(true);
+      setPromoError('');
+    } else {
+      setPromoApplied(false);
+      setPromoError('Неверный или неактивный промокод');
+      setDiscount(0);
+    }
+  };
+
+  const finalTotal = total - discount;
 
   const handlePayment = () => {
     setShowConfirmDialog(true);
@@ -36,7 +62,7 @@ const Payment = () => {
     setIsProcessing(true);
     setTimeout(() => {
       const bookingCode = `DUKE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      navigate('/confirmation', { state: { flight, from, to, total, passengers, bookingCode } });
+      navigate('/confirmation', { state: { flight, from, to, total: finalTotal, passengers, bookingCode } });
     }, 5000);
   };
 
@@ -200,16 +226,60 @@ const Payment = () => {
                     </div>
                   </div>
                   <Separator />
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Есть промокод?</label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Введите промокод..."
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value)}
+                        disabled={promoApplied}
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={applyPromoCode}
+                        disabled={promoApplied || !promoCode}
+                      >
+                        {promoApplied ? 'Применён' : 'Применить'}
+                      </Button>
+                    </div>
+                    {promoApplied && (
+                      <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                        <Icon name="CheckCircle" size={16} />
+                        Промокод применен! Скидка {discount.toLocaleString('ru-RU')} ₽
+                      </p>
+                    )}
+                    {promoError && (
+                      <p className="text-sm text-destructive mt-2 flex items-center gap-1">
+                        <Icon name="XCircle" size={16} />
+                        {promoError}
+                      </p>
+                    )}
+                  </div>
+                  <Separator />
+                  {discount > 0 && (
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Стоимость</span>
+                        <span>{total.toLocaleString('ru-RU')} ₽</span>
+                      </div>
+                      <div className="flex justify-between text-green-600">
+                        <span>Скидка</span>
+                        <span>-{discount.toLocaleString('ru-RU')} ₽</span>
+                      </div>
+                      <Separator />
+                    </div>
+                  )}
                   <div className="flex justify-between text-2xl font-bold">
                     <span>Всего</span>
-                    <span className="text-primary">{total.toLocaleString('ru-RU')} ₽</span>
+                    <span className="text-primary">{finalTotal.toLocaleString('ru-RU')} ₽</span>
                   </div>
                   <Button
                     className="w-full gradient-primary text-white hover:opacity-90 h-12 text-lg"
                     onClick={handlePayment}
                   >
                     <Icon name="Lock" size={20} className="mr-2" />
-                    Оплатить {total.toLocaleString('ru-RU')} ₽
+                    Оплатить {finalTotal.toLocaleString('ru-RU')} ₽
                   </Button>
                   <p className="text-xs text-center text-muted-foreground">
                     Нажимая кнопку, вы соглашаетесь с условиями
@@ -229,7 +299,7 @@ const Payment = () => {
               Подтверждение оплаты
             </AlertDialogTitle>
             <AlertDialogDescription className="text-base pt-2">
-              Вы подтверждаете оплату <span className="font-bold text-foreground">{total.toLocaleString('ru-RU')} ₽</span> за рейс{' '}
+              Вы подтверждаете оплату <span className="font-bold text-foreground">{finalTotal.toLocaleString('ru-RU')} ₽</span> за рейс{' '}
               <span className="font-bold text-foreground">{flight.id}</span> {from}-{to}?
             </AlertDialogDescription>
           </AlertDialogHeader>

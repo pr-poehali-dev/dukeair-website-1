@@ -47,7 +47,7 @@ const Index = () => {
               <a href="#promo" className="text-sm font-medium hover:text-primary transition-colors">Акции</a>
               <a href="#info" className="text-sm font-medium hover:text-primary transition-colors">Информация</a>
               <a href="#support" className="text-sm font-medium hover:text-primary transition-colors">Поддержка</a>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
                 <Icon name="User" size={16} className="mr-2" />
                 Личный кабинет
               </Button>
